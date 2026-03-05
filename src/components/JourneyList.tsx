@@ -3,6 +3,7 @@ import {
   XCircleIcon,
   ClockIcon,
   UserIcon,
+  MegaphoneIcon,
 } from 'lucide-react';
 import { Journey } from '../types';
 
@@ -134,6 +135,12 @@ function JourneyRow({
             <UserIcon className="w-3 h-3 text-slate-400 shrink-0" />
             <span className="text-[11px] font-mono text-slate-500 truncate">
               {journey.userId}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <MegaphoneIcon className="w-3 h-3 text-slate-400 shrink-0" />
+            <span className="text-[11px] text-slate-500 truncate">
+              {journey.intentType.replace(/_/g, ' ')}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-0.5">

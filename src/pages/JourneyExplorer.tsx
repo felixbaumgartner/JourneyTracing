@@ -126,6 +126,7 @@ export function JourneyExplorer() {
 
   const [selectedJourney, setSelectedJourney] = useState<Journey | null>(null);
   const [searchInput, setSearchInput] = useState('');
+  const [committedSearch, setCommittedSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showCampaignDropdown, setShowCampaignDropdown] = useState(false);
   const [errorsOnly, setErrorsOnly] = useState(false);
@@ -185,8 +186,8 @@ export function JourneyExplorer() {
         );
         if (!hasErrorCode) return false;
       }
-      if (searchInput) {
-        const q = searchInput.toLowerCase();
+      if (committedSearch) {
+        const q = committedSearch.toLowerCase();
         const matchesSearch =
           j.correlationId.toLowerCase().includes(q) ||
           j.userId.toLowerCase().includes(q) ||
@@ -201,7 +202,7 @@ export function JourneyExplorer() {
       }
       return true;
     });
-  }, [filters.statuses, filters.campaigns, errorsOnly, errorSystemFilter, errorCodeFilter, searchInput]);
+  }, [filters.statuses, filters.campaigns, errorsOnly, errorSystemFilter, errorCodeFilter, committedSearch]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -217,15 +218,30 @@ export function JourneyExplorer() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const executeSearch = useCallback(() => {
+    setCommittedSearch(searchInput);
+    setShowDropdown(false);
+    setHighlightedIndex(-1);
+  }, [searchInput]);
+
   const handleSelectSuggestion = useCallback((suggestion: SearchSuggestion) => {
     setSearchInput(suggestion.value);
     setShowDropdown(false);
     setHighlightedIndex(-1);
-    inputRef.current?.focus();
   }, []);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (showDropdown && highlightedIndex >= 0 && filteredSuggestions.length > 0) {
+          handleSelectSuggestion(filteredSuggestions[highlightedIndex]);
+        } else {
+          executeSearch();
+        }
+        return;
+      }
+
       if (!showDropdown || filteredSuggestions.length === 0) return;
 
       if (e.key === 'ArrowDown') {
@@ -238,19 +254,17 @@ export function JourneyExplorer() {
         setHighlightedIndex((prev) =>
           prev > 0 ? prev - 1 : filteredSuggestions.length - 1
         );
-      } else if (e.key === 'Enter' && highlightedIndex >= 0) {
-        e.preventDefault();
-        handleSelectSuggestion(filteredSuggestions[highlightedIndex]);
       } else if (e.key === 'Escape') {
         setShowDropdown(false);
         setHighlightedIndex(-1);
       }
     },
-    [showDropdown, filteredSuggestions, highlightedIndex, handleSelectSuggestion]
+    [showDropdown, filteredSuggestions, highlightedIndex, handleSelectSuggestion, executeSearch]
   );
 
   const clearSearch = useCallback(() => {
     setSearchInput('');
+    setCommittedSearch('');
     setShowDropdown(false);
     inputRef.current?.focus();
   }, []);
@@ -478,7 +492,7 @@ export function JourneyExplorer() {
         </button>
 
         <button
-          onClick={() => setShowDropdown(false)}
+          onClick={executeSearch}
           className="flex items-center gap-1.5 px-4 py-2 bg-indigo-500 text-white text-sm font-medium rounded-lg hover:bg-indigo-600 transition-colors"
         >
           <PlayIcon className="w-3.5 h-3.5" />
@@ -496,7 +510,7 @@ export function JourneyExplorer() {
       />
 
       {/* User delivery summary — shown when all journeys belong to one user */}
-      <UserDeliverySummary journeys={filteredJourneys} searchInput={searchInput} />
+      <UserDeliverySummary journeys={filteredJourneys} searchInput={committedSearch} />
 
       {/* Three-pane layout */}
       <div className="flex-1 flex overflow-hidden">
