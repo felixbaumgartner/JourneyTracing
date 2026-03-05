@@ -496,7 +496,7 @@ export function JourneyExplorer() {
       />
 
       {/* User delivery summary — shown when all journeys belong to one user */}
-      <UserDeliverySummary journeys={filteredJourneys} />
+      <UserDeliverySummary journeys={filteredJourneys} searchInput={searchInput} />
 
       {/* Three-pane layout */}
       <div className="flex-1 flex overflow-hidden">

@@ -3,29 +3,57 @@ import {
   MailOpenIcon,
   MousePointerClickIcon,
   UserIcon,
+  MailIcon,
+  PhoneIcon,
+  SmartphoneIcon,
   InboxIcon,
 } from 'lucide-react';
 import { Journey } from '../types';
 
+type IdentifierType = 'user_id' | 'soylent_email_id' | 'soylent_phone_id' | 'device_id';
+
 interface UserDeliverySummaryProps {
   journeys: Journey[];
+  searchInput: string;
 }
 
 interface DeliveryStats {
-  userId: string;
+  identifierLabel: string;
+  identifierType: IdentifierType;
   total: number;
   delivered: number;
   opened: number;
   clicked: number;
 }
 
-function computeStats(journeys: Journey[]): DeliveryStats | null {
+function detectIdentifier(journeys: Journey[], searchInput: string): { label: string; type: IdentifierType } {
+  if (!searchInput) return { label: journeys[0].userId, type: 'user_id' };
+
+  const q = searchInput.toLowerCase();
+  const first = journeys[0];
+
+  if (first.soylentEmailId.toLowerCase() === q) return { label: first.soylentEmailId, type: 'soylent_email_id' };
+  if (first.soylentPhoneId.toLowerCase() === q) return { label: first.soylentPhoneId, type: 'soylent_phone_id' };
+  if (first.deviceId.toLowerCase() === q) return { label: first.deviceId, type: 'device_id' };
+  if (first.userId.toLowerCase() === q) return { label: first.userId, type: 'user_id' };
+
+  // Partial match fallback
+  if (first.soylentEmailId.toLowerCase().includes(q)) return { label: first.soylentEmailId, type: 'soylent_email_id' };
+  if (first.soylentPhoneId.toLowerCase().includes(q)) return { label: first.soylentPhoneId, type: 'soylent_phone_id' };
+  if (first.deviceId.toLowerCase().includes(q)) return { label: first.deviceId, type: 'device_id' };
+
+  return { label: first.userId, type: 'user_id' };
+}
+
+function computeStats(journeys: Journey[], searchInput: string): DeliveryStats | null {
   if (journeys.length === 0) return null;
 
   // Check all journeys belong to the same user
   const userId = journeys[0].userId;
   const allSameUser = journeys.every((j) => j.userId === userId);
   if (!allSameUser) return null;
+
+  const identifier = detectIdentifier(journeys, searchInput);
 
   let delivered = 0;
   let opened = 0;
@@ -47,27 +75,37 @@ function computeStats(journeys: Journey[]): DeliveryStats | null {
     if (hasClick) clicked++;
   }
 
-  return { userId, total: journeys.length, delivered, opened, clicked };
+  return { identifierLabel: identifier.label, identifierType: identifier.type, total: journeys.length, delivered, opened, clicked };
 }
 
-export function UserDeliverySummary({ journeys }: UserDeliverySummaryProps) {
-  const stats = computeStats(journeys);
+const IDENTIFIER_CONFIG: Record<IdentifierType, { icon: typeof UserIcon; bg: string; iconColor: string; label: string }> = {
+  user_id: { icon: UserIcon, bg: 'bg-blue-100', iconColor: 'text-blue-600', label: 'User ID' },
+  soylent_email_id: { icon: MailIcon, bg: 'bg-purple-100', iconColor: 'text-purple-600', label: 'Soylent Email ID' },
+  soylent_phone_id: { icon: PhoneIcon, bg: 'bg-teal-100', iconColor: 'text-teal-600', label: 'Soylent Phone ID' },
+  device_id: { icon: SmartphoneIcon, bg: 'bg-orange-100', iconColor: 'text-orange-600', label: 'Device ID' },
+};
+
+export function UserDeliverySummary({ journeys, searchInput }: UserDeliverySummaryProps) {
+  const stats = computeStats(journeys, searchInput);
   if (!stats) return null;
 
   const deliveryRate =
     stats.total > 0 ? Math.round((stats.delivered / stats.total) * 100) : 0;
 
+  const config = IDENTIFIER_CONFIG[stats.identifierType];
+  const Icon = config.icon;
+
   return (
     <div className="px-4 py-2.5 bg-gradient-to-r from-slate-50 to-blue-50/40 border-b border-slate-200">
       <div className="flex items-center gap-6">
-        {/* User identifier */}
+        {/* Identifier */}
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-            <UserIcon className="w-3.5 h-3.5 text-blue-600" />
+          <div className={`w-6 h-6 rounded-full ${config.bg} flex items-center justify-center`}>
+            <Icon className={`w-3.5 h-3.5 ${config.iconColor}`} />
           </div>
           <div>
             <span className="text-xs font-mono font-semibold text-slate-700">
-              {stats.userId}
+              {stats.identifierLabel}
             </span>
             <span className="text-[10px] text-slate-400 ml-2">
               {stats.total} journey{stats.total !== 1 ? 's' : ''}
