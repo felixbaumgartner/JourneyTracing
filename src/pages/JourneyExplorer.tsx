@@ -14,6 +14,7 @@ import { FilterPane } from '../components/FilterPane';
 import { JourneyList } from '../components/JourneyList';
 import { JourneyPreview } from '../components/JourneyPreview';
 import { ErrorSummaryBar } from '../components/ErrorSummaryBar';
+import { UserDeliverySummary } from '../components/UserDeliverySummary';
 import { mockJourneys, ALL_SYSTEMS, ALL_INTENTS, ALL_CAMPAIGNS } from '../mockData';
 import { Filters, Journey } from '../types';
 
@@ -493,6 +494,9 @@ export function JourneyExplorer() {
         activeErrorCode={errorCodeFilter}
         onSelectErrorCode={setErrorCodeFilter}
       />
+
+      {/* User delivery summary — shown when all journeys belong to one user */}
+      <UserDeliverySummary journeys={filteredJourneys} />
 
       {/* Three-pane layout */}
       <div className="flex-1 flex overflow-hidden">

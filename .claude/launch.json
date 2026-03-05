@@ -5,7 +5,7 @@
       "name": "journey-tracing-ui",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 3100
+      "port": 3103
     }
   ]
 }
